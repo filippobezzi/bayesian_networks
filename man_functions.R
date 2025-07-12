@@ -514,7 +514,7 @@ extract_topological_order <- function(dag_matrix) {
   }
   
   # Get topological order - USE topo_sort instead of topological_sort
-  topo_order <- topo_sort(g, mode = "out")
+  topo_order <- igraph::topo_sort(g, mode = "out")
   node_names <- rownames(dag_matrix)
   
   return(node_names[topo_order])

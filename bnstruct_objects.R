@@ -69,15 +69,15 @@ sachs_net_bs <- learn.network(
 
 
 #### UTILITIES ####
-# bnstruct_to_bnlearn <- function(bnstruct_net) {
-#   vars <- variables(bnstruct_net)
-#   adj  <- dag(bnstruct_net)
-#   bn   <- empty.graph(nodes=vars)
-#   for(i in seq_along(vars)) for(j in seq_along(vars))
-#     if(adj[i,j]==1) 
-#       bn <- set.arc(bn, from=vars[i], to=vars[j])
-#   bn
-# }
+bnstruct_to_bnlearn <- function(bnstruct_net) {
+  vars <- variables(bnstruct_net)
+  adj  <- dag(bnstruct_net)
+  bn   <- empty.graph(nodes=vars)
+  for(i in seq_along(vars)) for(j in seq_along(vars))
+    if(adj[i,j]==1) 
+      bn <- set.arc(bn, from=vars[i], to=vars[j])
+  bn
+}
 
 # Convert a bnlearn 'bn' object back to a bnstruct 'BN' object using the original BNDataset
 # bnlearn_to_bnstruct <- function(bn_learn, bndataset) {
@@ -92,7 +92,7 @@ sachs_net_bs <- learn.network(
 
 # #### COMPARISON METRICS ####
 ###### PREPARE DATASETS ######
-df_ruiz_fac  <- as.data.frame(lapply(df_ruiz, function(col) as.factor(col)))
+ruiz_df_fac  <- as.data.frame(lapply(df_ruiz, function(col) as.factor(col)))
 asia_df_fac  <- as.data.frame(lapply(asia, function(col) as.factor(col)))
 child_df_fac <- as.data.frame(lapply(child, function(col) as.factor(col)))
 sachs_df_fac <- as.data.frame(lapply(sachs, function(col) as.factor(col)))
@@ -109,18 +109,22 @@ sachs_bs_bn <- bnstruct_to_bnlearn(sachs_net_bs)
 ##### COMPARE STATS #####
 compare_stats <- function(net_true, net_learn) {
     # Extract adjacency matrices from either bnstruct::BN or bnlearn::bn objects
-    true_mat   <- if (inherits(net_ref, "BN")) dag(net_true)
-                else if (inherits(net_ref, "bn")) amat(net_true)
+    true_mat   <- if (inherits(net_true, "BN")) dag(net_true)
+                else if (inherits(net_true, "bn")) amat(net_true)
                 else stop("Unsupported network class for reference")
     learn_mat <- if (inherits(net_learn, "BN")) dag(net_learn)
-                else if (inherits(net_learn, "bn")) amat(net_learn) # nolint # nolint
+                else if (inherits(net_learn, "bn")) amat(net_learn)
                 else stop("Unsupported network class for learned")
+
+    # ensure learned matrix rows/cols match the true matrix ordering
+    common <- intersect(rownames(true_mat), rownames(learn_mat))
+    learn_mat <- learn_mat[common, common]
+    true_mat  <- true_mat[common, common]
 
     # Compute true positives, false positives, false negatives
     TP <- sum(true_mat == 1 & learn_mat == 1)
     FP <- sum(true_mat == 0 & learn_mat == 1)
     FN <- sum(true_mat == 1 & learn_mat == 0)
-    TN <- sum(true_mat == 0 & learn_mat == 0)
 
     # Compute precision, recall, F1 (guard against zero denominators)
     Precision <- if ((TP + FP) == 0) NA else TP / (TP + FP)
@@ -135,7 +139,6 @@ compare_stats <- function(net_true, net_learn) {
         TP = TP, 
         FP = FP, 
         FN = FN,
-        TN = TN,
         Precision = Precision,
         Recall = Recall,
         F1 = F1)
