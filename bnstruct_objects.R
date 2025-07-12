@@ -113,7 +113,7 @@ compare_stats <- function(net_true, net_learn) {
                 else if (inherits(net_ref, "bn")) amat(net_true)
                 else stop("Unsupported network class for reference")
     learn_mat <- if (inherits(net_learn, "BN")) dag(net_learn)
-                else if (inherits(net_learn, "bn")) amat(net_learn)
+                else if (inherits(net_learn, "bn")) amat(net_learn) # nolint # nolint
                 else stop("Unsupported network class for learned")
 
     # Compute true positives, false positives, false negatives
