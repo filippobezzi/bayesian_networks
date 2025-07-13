@@ -121,6 +121,19 @@ compare_stats <- function(net_true, net_learn) {
     learn_mat <- learn_mat[common, common]
     true_mat  <- true_mat[common, common]
 
+    # build character vectors of directed edges "from->to"
+    true_edges <- apply(which(true_mat == 1, arr.ind = TRUE), 1,
+                        function(rc) paste(rownames(true_mat)[rc[1]],
+                                           colnames(true_mat)[rc[2]],
+                                           sep = "->"))
+    learn_edges <- apply(which(learn_mat == 1, arr.ind = TRUE), 1,
+                         function(rc) paste(rownames(learn_mat)[rc[1]],
+                                            colnames(learn_mat)[rc[2]],
+                                            sep = "->"))
+    # identify missing and extra edges
+    missing_edges <- setdiff(true_edges, learn_edges)
+    extra_edges   <- setdiff(learn_edges, true_edges)
+
     # Compute true positives, false positives, false negatives
     TP <- sum(true_mat == 1 & learn_mat == 1)
     FP <- sum(true_mat == 0 & learn_mat == 1)
@@ -139,6 +152,8 @@ compare_stats <- function(net_true, net_learn) {
         TP = TP, 
         FP = FP, 
         FN = FN,
+        #Missing = I(list(missing_edges)),
+        #Extra   = I(list(extra_edges)),
         Precision = Precision,
         Recall = Recall,
         F1 = F1)
